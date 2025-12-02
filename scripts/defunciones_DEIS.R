@@ -6,10 +6,18 @@ library(ggplot2)
 
 # CARGAR BASE DE DATOS
 
+
+##### LINUX  #########
 df_main <- readr::read_csv2(
-  "../bases_de_datos/DEFUNCIONES_FUENTE_DEIS_1990_2022_CIFRAS_OFICIALES.csv",
+  "bases_de_datos/DEFUNCIONES_FUENTE_DEIS_1990_2022_CIFRAS_OFICIALES.csv",
   locale = readr::locale(encoding = "ISO-8859-1")
 )
+
+##### WINDOWS  #########
+#df_main <- readr::read_csv2(
+ # "../bases_de_datos/DEFUNCIONES_FUENTE_DEIS_1990_2022_CIFRAS_OFICIALES.csv",
+  #locale = readr::locale(encoding = "ISO-8859-1")
+#)
 
 
 #head(df_main)
@@ -73,7 +81,7 @@ df_filtrado2 <- df_filtrado %>%
 
 df_final <- df_filtrado2
 
-View(head(df_final, 100))
+#View(head(df_final, 100))
 
 df_fem <- df_final %>%
   dplyr::filter(SEXO_NOMBRE == "Mujer")
@@ -81,9 +89,9 @@ df_fem <- df_final %>%
 df_masc <- df_final %>%
   dplyr::filter(SEXO_NOMBRE == "Hombre")
 
-View(head(df_fem, 50))
+#View(head(df_fem, 50))
 
-View(head(df_masc, 50))
+#View(head(df_masc, 50))
 
 # TOTAL DE DEFUNCIONES POR AÑO    ############# AJUSTE PARA INDICE CADA 100.000 HABITANTES#####
 
@@ -129,58 +137,50 @@ df_conteo_mixto <- df_final %>%
 
 print(df_conteo_mixto)
 
+############# CALCULO DE LA TASA DE SUICIDIOS CADA 100.000 HABITANTES; UTILIZANDO PROYECCIONES ANUALES
+############# DE POBLACION DEL INE
 
-POB_2012 <- 17444799
-POB_2015 <- 18006407
-POB_2020 <- 18896684
+df_poblacion_anual <- tibble::tibble(
+  AÑO = 2012:2022,
+  POBLACION_TOTAL = c(
+    17443491, #2012
+    17611902, #2013
+    17787617, #2014
+    17971423, #2015
+    18167147, #2016
+    18419192, #2017
+    18751405, #2018
+    19107216, #2019
+    19458310, #2020
+    19678363, #2021
+    19828563 #2022
+  )
+)
 
-df_poblacion_ref <- tibble::tribble(
-  ~AÑO_INICIO, ~AÑO_FIN, ~POBLACION,
-  2012, 2014, POB_2012, 
-  2015, 2019, POB_2015, 
-  2020, 2022, POB_2020
-) %>%
-  
-dplyr::mutate(AÑO = as.numeric(AÑO_INICIO))
 
-calcular_tasa_poblacion <- function(df_conteo, df_pob_ref) {
+calcular_tasa_anual <- function(df_conteo, df_poblacion_anual){
   df_conteo %>%
-    dplyr::mutate(POBLACION_ESTIMADA = NA_real_) %>% 
+    dplyr::left_join(df_poblacion_anual, by = "AÑO") %>%
     
-    dplyr::mutate(
-      POBLACION_ESTIMADA = dplyr::case_when(
-        AÑO >= 2012 & AÑO <= 2014 ~ df_pob_ref$POBLACION[df_pob_ref$AÑO_INICIO == 2012],
-        AÑO >= 2015 & AÑO <= 2019 ~ df_pob_ref$POBLACION[df_pob_ref$AÑO_INICIO == 2015],
-        AÑO >= 2020 & AÑO <= 2022 ~ df_pob_ref$POBLACION[df_pob_ref$AÑO_INICIO == 2020],
-        TRUE ~ NA_real_ 
-      )
-    ) %>%
-    
-    # Cálculo del índice: (Suicidios / Población) * 100.000
     dplyr::mutate(
       TASA = round(
-        (N_SUICIDIOS / POBLACION_ESTIMADA) * 100000,
+        (N_SUICIDIOS / POBLACION_TOTAL) * 100000,
         digits = 5
       )
     ) %>%
-    dplyr::select(-N_SUICIDIOS, -POBLACION_ESTIMADA) 
+    dplyr::select(AÑO,TASA)
 }
 
-# DF con incoporacion de indice
-df_fem_i <- calcular_tasa_poblacion(df_conteo_fem, df_poblacion_ref)
-df_masc_i <- calcular_tasa_poblacion(df_conteo_masc, df_poblacion_ref)
-df_conteo_mixto_i <- calcular_tasa_poblacion(df_conteo_mixto, df_poblacion_ref)
 
-df_fem_i <- df_fem_i %>% 
-  dplyr::rename(PORCENTAJE_SUICIDIO = TASA)
+# DF con incoporacion de indice
+df_fem_i <- calcular_tasa_anual(df_conteo_fem, df_poblacion_anual)
+df_masc_i <- calcular_tasa_anual(df_conteo_masc, df_poblacion_anual)
+df_conteo_mixto_i <- calcular_tasa_anual(df_conteo_mixto, df_poblacion_anual)
+
 print(df_fem_i)
 
-df_masc_i <- df_masc_i %>% 
-  dplyr::rename(PORCENTAJE_SUICIDIO = TASA)
 print(df_masc_i)
 
-df_conteo_mixto_i <- df_conteo_mixto_i %>% 
-  dplyr::rename(PORCENTAJE_SUICIDIO = TASA)
 print(df_conteo_mixto_i)
 
 
@@ -213,154 +213,101 @@ print(df_conteo_mixto_i)
 #print(df_conteo_mixto_i)
 
 
-grafico_suicidios_fem <- ggplot2::ggplot(
-  data = df_conteo_fem_i,
-  mapping = ggplot2::aes(x = AÑO, y = PORCENTAJE_SUICIDIO)
-)+
-  ggplot2::geom_line(color = "blue", size = 1) +
-  ggplot2::geom_point(color = "blue", size = 3) +
-  ggplot2::scale_x_continuous(breaks = seq(2012, 2022, by = 1)) +
+
+#####################################################################################
+#####################################################################################
+################### SECCIÓN DE GRÁFICOS - SE REEMPLAZA POR EL USO DE SHINY ##########
+#####################################################################################
+#####################################################################################
+
+
+
+#grafico_suicidios_fem <- ggplot2::ggplot(
+ # data = df_conteo_fem_i,
+  #mapping = ggplot2::aes(x = AÑO, y = PORCENTAJE_SUICIDIO)
+#)+
+#  ggplot2::geom_line(color = "blue", size = 1) +
+#  ggplot2::geom_point(color = "blue", size = 3) +
+#  ggplot2::scale_x_continuous(breaks = seq(2012, 2022, by = 1)) +
 #  ggplot2::scale_y_continuous(limits = c(0.20, 0.40),breaks = seq(0.00, 2.00, by = 0.10)) +
-  ggplot2::labs(
-    title = "Tasa de suicidios en mujeres (2012-2022)",
-    x = "Año",
-    y = "Suicidios por cada 100.000 habitantes"
-  ) +
-  ggplot2::theme_minimal()
+ # ggplot2::labs(
+  #  title = "Tasa de suicidios en mujeres (2012-2022)",
+  #  x = "Año",
+   # y = "Suicidios por cada 100.000 habitantes"
+  #) +
+  #ggplot2::theme_minimal()
 
-print(grafico_suicidios_fem)
+#print(grafico_suicidios_fem)
 
-grafico_suicidios_masc <- ggplot2::ggplot(
-  data = df_conteo_masc_i,
-  mapping = ggplot2::aes(x = AÑO, y = PORCENTAJE_SUICIDIO)
-)+
-  ggplot2::geom_line(color = "green", size = 1) +
-  ggplot2::geom_point(color = "green", size = 3) +
-  ggplot2::scale_x_continuous(breaks = seq(2012, 2022, by = 1)) +
+#grafico_suicidios_masc <- ggplot2::ggplot(
+ # data = df_conteo_masc_i,
+  #mapping = ggplot2::aes(x = AÑO, y = PORCENTAJE_SUICIDIO)
+#)+
+ # ggplot2::geom_line(color = "green", size = 1) +
+  #ggplot2::geom_point(color = "green", size = 3) +
+  #ggplot2::scale_x_continuous(breaks = seq(2012, 2022, by = 1)) +
  # ggplot2::scale_y_continuous(limits = c(0.70, 1.70),breaks = seq(0.00, 2.00, by = 0.10)) +
-  ggplot2::labs(
-    title = "Tasa de suicidios en hombres (2012-2022)",
-    x = "Año",
-    y = "Suicidios por cada 100.000 habitantes"
-  ) +
-  ggplot2::theme_minimal()
+  #ggplot2::labs(
+   # title = "Tasa de suicidios en hombres (2012-2022)",
+    #x = "Año",
+    #y = "Suicidios por cada 100.000 habitantes"
+#  ) +
+ # ggplot2::theme_minimal()
 
-print(grafico_suicidios_masc)
+#print(grafico_suicidios_masc)
 
 
-grafico_suicidios_mixto <- ggplot2::ggplot(
-  data = df_conteo_mixto_i,
-  mapping = ggplot2::aes(x = AÑO, y = PORCENTAJE_SUICIDIO)
-)+
-  ggplot2::geom_line(color = "red", size = 1) +
-  ggplot2::geom_point(color = "red", size = 2) +
-  ggplot2::scale_x_continuous(breaks = seq(2012, 2022, by = 1)) +
+#grafico_suicidios_mixto <- ggplot2::ggplot(
+ # data = df_conteo_mixto_i,
+  #mapping = ggplot2::aes(x = AÑO, y = PORCENTAJE_SUICIDIO)
+#)+
+ # ggplot2::geom_line(color = "red", size = 1) +
+  #ggplot2::geom_point(color = "red", size = 2) +
+  #ggplot2::scale_x_continuous(breaks = seq(2012, 2022, by = 1)) +
 #  ggplot2::scale_y_continuous(limits = c(1.10, 1.90),breaks = seq(0.00, 2.00, by = 0.10)) +
-  ggplot2::labs(
-    title = "Tasa de suicidios general (2012-2022)",
-    x = "Año",
-    y = "Suicidios por cada 100.000 habitantes"
-  ) +
-  ggplot2::theme_minimal()
+  #ggplot2::labs(
+   # title = "Tasa de suicidios general (2012-2022)",
+    #x = "Año",
+    #y = "Suicidios por cada 100.000 habitantes"
+  #) +
+  #ggplot2::theme_minimal()
 
-print(grafico_suicidios_mixto)
+#print(grafico_suicidios_mixto)
 
 
 # GRAFICO DE MEZCLAS (FEM Y MASC)
 
-df_etiqueta_f <- df_conteo_fem_i %>%
-  dplyr::mutate(SEXO = "Mujer")
-df_etiqueta_m <- df_conteo_masc_i %>%
-  dplyr::mutate(SEXO ="Hombre")
-df_comparacion_de_etiquetas <- dplyr::bind_rows(df_etiqueta_f,df_etiqueta_m)
+#df_etiqueta_f <- df_conteo_fem_i %>%
+ # dplyr::mutate(SEXO = "Mujer")
+#df_etiqueta_m <- df_conteo_masc_i %>%
+ # dplyr::mutate(SEXO ="Hombre")
+#df_comparacion_de_etiquetas <- dplyr::bind_rows(df_etiqueta_f,df_etiqueta_m)
 #print(df_comparacion_de_etiquetas)
 
-library(ggplot2)
-grafico_comparativo <- ggplot2::ggplot(
-  data = df_comparacion_de_etiquetas,
-  mapping = ggplot2::aes(x=AÑO, y=PORCENTAJE_SUICIDIO, color=SEXO)
-) +
-  ggplot2::geom_line(size=1) +
-  ggplot2::geom_point(size=3)+
-  ggplot2::scale_x_continuous(breaks = seq(2012, 2022, by = 1)) +
+#library(ggplot2)
+#grafico_comparativo <- ggplot2::ggplot(
+ # data = df_comparacion_de_etiquetas,
+  #mapping = ggplot2::aes(x=AÑO, y=PORCENTAJE_SUICIDIO, color=SEXO)
+#) +
+ # ggplot2::geom_line(size=1) +
+  #ggplot2::geom_point(size=3)+
+  #ggplot2::scale_x_continuous(breaks = seq(2012, 2022, by = 1)) +
  # ggplot2::scale_y_continuous(
   #  limits = c(0.00, 2.00),
    # breaks = seq(0.00, 2.00, by = 0.10)
   #) +
-  ggplot2::scale_color_manual(
-    values = c("Hombre" = "green", "Mujer" = "blue"),
-    name = "Sexo"
-  ) +
-  ggplot2::labs(
-    title = "Comparativa de Tasa de Suicidio por Sexo (2012-2022)",
-    x = "Año",
-    y = "Suicidios por cada 100.000 habitantes"
-  ) +
-  ggplot2::theme_minimal()
+  #ggplot2::scale_color_manual(
+   # values = c("Hombre" = "green", "Mujer" = "blue"),
+    #name = "Sexo"
+  #) +
+  #ggplot2::labs(
+   # title = "Comparativa de Tasa de Suicidio por Sexo (2012-2022)",
+  #  x = "Año",
+   # y = "Suicidios por cada 100.000 habitantes"
+  #) +
+  #ggplot2::theme_minimal()
 
-print(grafico_comparativo)
-
-
-categorizar_edad_final <- function(df, columna_edad = "EDAD_CANT") {
-  
-  limites_rangos <- c(0, 9, 19, 29, 39, 49, 59, 69, 79, 89, 99, 109, 119, 129)
-  etiquetas_rangos <- c("0-9", "10-19", "20-29", "30-39", "40-49", 
-                        "50-59", "60-69", "70-79", "80-89", "90-99", 
-                        "100-109", "110-119", "120-129")
-  
-  df %>%
-    dplyr::mutate(
-      RANGO_ETARIO = cut(
-        x = .data[[columna_edad]],
-        breaks = limites_rangos,
-        labels = etiquetas_rangos,
-        right = TRUE, 
-        include.lowest = TRUE 
-      )
-    ) %>%
-    dplyr::filter(!is.na(RANGO_ETARIO))
-}
-
-df_etario <- categorizar_edad_final(df_final, columna_edad = "EDAD_CANT")
-
-df_etario_fem <- categorizar_edad_final(df_fem, columna_edad = "EDAD_CANT")
-
- df_etario_masc <- categorizar_edad_final(df_masc, columna_edad = "EDAD_CANT")
-
-library(dplyr)
-
-df_etario_conteo_mixto <- df_etario %>%
-  dplyr::group_by(RANGO_ETARIO) %>%
-  dplyr::summarise(
-    N_SUICIDIOS = n()
-  ) %>%
-  dplyr::ungroup()
-
-print("Cantidad de suicidios generales por rango etario entre los años 2012 y 2022")
-print(df_etario_conteo_mixto)
-
-
-df_etario_conteo_fem <- df_etario_fem %>%
-  dplyr::group_by(RANGO_ETARIO) %>%
-  dplyr::summarise(
-    N_SUICIDIOS = n()
-  ) %>%
-  dplyr::ungroup()
-
-print("Cantidad de suicidios en mujeres por rango etario entre los años 2012 y 2022")
-print(df_etario_conteo_fem)
-
-
-df_etario_conteo_masc <- df_etario_masc %>%
-  dplyr::group_by(RANGO_ETARIO) %>%
-  dplyr::summarise(
-    N_SUICIDIOS = n()
-  ) %>%
-  dplyr::ungroup()
-
-print("Cantidad de suicidios en hombres por rango etario entre los años 2012 y 2022")
-print(df_etario_conteo_masc)
-
+#print(grafico_comparativo)
 
 
 
