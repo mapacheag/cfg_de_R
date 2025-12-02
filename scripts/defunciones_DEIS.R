@@ -309,3 +309,52 @@ print(df_conteo_mixto_i)
 
 #print(grafico_comparativo)
 
+
+
+
+
+###################################################################################
+###################### INICIO DE PLANTILLA SERIE DE TIEMPO ########################
+
+#si no existe el paquete plotly, lo instalamos
+if(!require(plotly)){install.packages("plotly")}
+
+# Datos tipo "tibble" (generados de forma reproducible)
+set.seed(123)
+fechas <- seq(as.Date("2012-01-01"), as.Date("2022-01-01"), by = "1 year")
+n <- length(fechas)
+
+# Series que imitan patrones y rangos de IVE en el período (verde ~40–70; azul ~2–16)
+set.seed(2125)
+#datos aleatorios. de ahi, reemplazar por sus datos
+serie_verde <- rnorm(n= n, 
+                     mean=.28, 
+                     sd=.05)
+
+datos <- tibble::tibble(
+  mes = fechas,
+  verde = serie_verde#,
+  #azul  = serie_azul #sacamos la otra serie
+) |>
+  dplyr::mutate(mes_anio = format(mes, "%b %Y")) |>
+  dplyr::select(mes, mes_anio, verde) #, azul) #sacamos la otra serie
+
+p3<- 
+  ggplot2::ggplot(datos, ggplot2::aes(x = mes)) + #formato wide. cada variable es una columna, en este caso
+  geom_line(ggplot2::aes(y = verde, color = "Mujeres"), size = 1) + #añadimos una capa de línea con las interrupciones
+  #geom_line(ggplot2::aes(y = azul, color = "Continuaciones"), size = 1) + #añadimos una capa de línea con las continuaciones
+  scale_color_manual(#generamos la leyenda
+    name = "Leyenda",#título de la leyenda
+    values = c("Mujeres" = "#01c9ad", "Continuaciones" = "#9682fc"))+#colores de las líneas e identificador de las líneas
+  labs(y = "Suicidios por cada 100.000 habitantes", x = "Año")+ #Definimos las etiquetas de ejes
+  theme_minimal(base_family = "storia-sans") #+ #tema minimalista, con la fuente personalizada
+
+p3 #grafico estático
+
+plotly::ggplotly(p3) |> #convertimos a plotly. ojo que el tooltip se genera por defecto, pero se puede personalizar
+  layout(font=list(family="storia-sans"), # fuente personalizada
+         paper_bgcolor = "rgba(0,0,0,0)",  plot_bgcolor  = "rgba(0,0,0,0)") # → fondo del lienzo y fondo del área de trazado
+
+
+######################## FIN DE PLANTILLA SERIE DE TIEMPO #########################
+###################################################################################
