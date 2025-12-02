@@ -105,8 +105,6 @@ df_masc <- df_final %>%
 
 #print(df_defunciones_anuales)
 
-# GRAFICO SUICIDIOS/TIEMPO (2012-2022) FEM y MASC
-
 df_conteo_fem <- df_fem %>%
   dplyr::mutate(AÑO = as.numeric(AÑO)) %>%
   dplyr::filter(AÑO >= 2012 & AÑO <= 2022) %>%
@@ -136,6 +134,59 @@ df_conteo_mixto <- df_final %>%
   )
 
 print(df_conteo_mixto)
+
+
+
+#####################################################################
+########### CATEGORIZAR EN RANGOS ETARIOS ###########################
+#####################################################################
+
+
+categorizar_edad_suicidios <- function(df, clumna_edad = "EDAD_CANT") {
+  
+  limites_rangos <- c(0,14,64,Inf)
+  etiquetas_rangos <- c("0-14", "15-64", ">65")
+  
+  df %>%
+    dplyr::mutate(
+      RANGO_ETARIO = cut(
+        x = EDAD_CANT,
+        breaks = limites_rangos,
+        labels = etiquetas_rangos,
+        right = TRUE,
+        include.lowest = TRUE
+      )
+    ) %>%
+    dplyr::filter(!is.na(RANGO_ETARIO))
+}
+
+df_etario_conteo_mixto <- df_final %>%
+  categorizar_edad_suicidios() %>%
+  dplyr::group_by(RANGO_ETARIO) %>%
+  dplyr::summarise(N_SUICIDIOS = n()) %>%
+  dplyr::ungroup()
+
+print("Cantidad de suicidios generales por rango etario (2012-2022)")
+print(df_etario_conteo_mixto)
+
+df_etario_conteo_fem <- df_fem %>%
+  categorizar_edad_suicidios() %>%
+  dplyr::group_by(RANGO_ETARIO) %>%
+  dplyr::summarise(N_SUICIDIOS = n()) %>%
+  dplyr::ungroup()
+
+print("Cantidad de sucidios en mujeres por rango etario (2012-2022)")
+print(df_etario_conteo_fem)
+
+df_etario_conteo_masc <- df_masc %>%
+  categorizar_edad_suicidios() %>%
+  dplyr::group_by(RANGO_ETARIO) %>%
+  dplyr::summarise(N_SUICIDIOS = n()) %>%
+  dplyr::ungroup()
+
+print("Cantidad de suicidios en hombres por rango etario (2012-2022)")
+print(df_etario_conteo_masc)
+
 
 ############# CALCULO DE LA TASA DE SUICIDIOS CADA 100.000 HABITANTES; UTILIZANDO PROYECCIONES ANUALES
 ############# DE POBLACION DEL INE
@@ -182,6 +233,10 @@ print(df_fem_i)
 print(df_masc_i)
 
 print(df_conteo_mixto_i)
+
+#################################################################
+######## EN LA NOCHE AGREGO LA TASA PARA RANGOS ETARIOS #########
+#################################################################
 
 
 
