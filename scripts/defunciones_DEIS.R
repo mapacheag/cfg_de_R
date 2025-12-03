@@ -3,6 +3,7 @@
 library(dplyr)
 library(readr)
 library(ggplot2)
+library(gt)
 
 # CARGAR BASE DE DATOS
 
@@ -516,13 +517,13 @@ p3 <- ggplot2::ggplot(datos_comparativo, ggplot2::aes(x = año)) +        # Inic
   ) +
   
   scale_color_manual(                                                    # Define colores de las líneas
-    name = "Leyenda",                                                   # Título de la leyenda
+    name = "Sexo",                                                   # Título de la leyenda
     values = c("Mujeres" = "#01c9ad", "Hombres" = "#9682fc")            # Códigos hexadecimales para colores
   ) +
   
   scale_x_date(date_labels = "%Y", date_breaks = "1 year") +            # Formato eje X: solo año, marcas anuales
   
-  labs(y = "Suicidios por cada 100.000 habitantes", x = "Año") +        # Etiquetas de ejes
+  labs(y = "Tasa de mortalidad específica por suicidios", x = "Año") +        # Etiquetas de ejes
   
   theme_minimal()                                                       # Tema minimalista para gráfico
 
@@ -608,13 +609,13 @@ p4 <- ggplot2::ggplot(datos_fem_i, ggplot2::aes(x = año)) +        # Inicia gr�
   ) +
   
   scale_color_manual(                                                    # Define colores de las líneas
-    name = "Leyenda",                                                   # Título de la leyenda
+    name = "Sexo",                                                   # Título de la leyenda
     values = c("Mujeres" = "#01c9ad")            # Códigos hexadecimales para colores
   ) +
   
   scale_x_date(date_labels = "%Y", date_breaks = "1 year") +            # Formato eje X: solo año, marcas anuales
   
-  labs(y = "Suicidios por cada 100.000 habitantes", x = "Año") +        # Etiquetas de ejes
+  labs(y = "Tasa de mortalidad específica por suicidios", x = "Año") +        # Etiquetas de ejes
   
   theme_minimal()                                                       # Tema minimalista para gráfico
 
@@ -689,13 +690,13 @@ p5 <- ggplot2::ggplot(datos_masc_i, ggplot2::aes(x = año)) +        # Inicia gr
   ) +
   
   scale_color_manual(                                                    # Define colores de las líneas
-    name = "Leyenda",                                                   # Título de la leyenda
+    name = "Sexo",                                                   # Título de la leyenda
     values = c("Hombres" = "#9682fc")            # Códigos hexadecimales para colores
   ) +
   
   scale_x_date(date_labels = "%Y", date_breaks = "1 year") +            # Formato eje X: solo año, marcas anuales
   
-  labs(y = "Suicidios por cada 100.000 habitantes", x = "Año") +        # Etiquetas de ejes
+  labs(y = "Tasa de mortalidad específica por suicidios", x = "Año") +        # Etiquetas de ejes
   
   theme_minimal()                                                       # Tema minimalista para gráfico
 
@@ -733,3 +734,377 @@ htmlwidgets::saveWidget(
 
 ######################## FIN GRAFICO SOLO MASCULINO _I ############################
 ###################################################################################
+
+
+datos_comparativo_mixto <- df_tasa_mixta_anual_etaria %>% 
+  dplyr::mutate(AÑO = as.Date(paste0(AÑO, "-01-01"))) %>% 
+  dplyr::mutate(TEXTO_TOOLTIP = paste0(
+    "Año: ", format(AÑO, "%Y"), "<br>",             
+    "Grupo: ", RANGO_ETARIO, "<br>",                
+    "Tasa: ", round(TASA, 2)                        
+  ))
+
+p_etario_mixto <- ggplot2::ggplot(
+  data = datos_comparativo_mixto, 
+  mapping = ggplot2::aes(x = AÑO, y = TASA, color = RANGO_ETARIO, group = RANGO_ETARIO, 
+                         text = TEXTO_TOOLTIP)
+) +
+  ggplot2::geom_line(size = 1) + 
+  ggplot2::geom_point(size = 3) +
+  ggplot2::scale_x_date(date_labels = "%Y", date_breaks = "1 year") +
+  ggplot2::scale_y_continuous(
+    name = "Tasa de mortalidad específica por suicidios"
+  ) +
+  ggplot2::labs(
+    title = NULL, 
+    x = "Año",
+    color = "Rango Etario"
+  ) +
+  ggplot2::scale_color_manual(
+    values = c("0-14" = "#E69F00", "15-64" = "#ff6b6b", "65 o más" = "#387EF8") 
+  ) +
+  ggplot2::theme_minimal()
+
+plotly_p_etario_mixto <- plotly::ggplotly(
+  p_etario_mixto, 
+  tooltip = "text"
+) |>
+  plotly::layout(hovermode = "x unified")
+
+htmlwidgets::saveWidget(
+  widget = plotly_p_etario_mixto,
+  file = "graficos/grafico_tasa_suicidio_mixto_etario_interactivo.html",
+  selfcontained = TRUE
+)
+ggplot2::ggsave(
+  filename = "graficos/grafico_tasa_suicidio_mixto_etario.png", 
+  plot = p_etario_mixto, 
+  width = 10, height = 6
+)
+
+
+
+
+datos_comparativo_fem <- df_tasa_fem_anual_etaria %>% 
+  dplyr::mutate(AÑO = as.Date(paste0(AÑO, "-01-01"))) %>% 
+  dplyr::mutate(TEXTO_TOOLTIP = paste0(
+    "Año: ", format(AÑO, "%Y"), "<br>",             
+    "Grupo: ", RANGO_ETARIO, "<br>",               
+    "Tasa: ", round(TASA, 2)                        
+  ))
+
+
+p_etario_fem <- ggplot2::ggplot(
+  data = datos_comparativo_fem, 
+  mapping = ggplot2::aes(x = AÑO, y = TASA, color = RANGO_ETARIO, group = RANGO_ETARIO, 
+                         text = TEXTO_TOOLTIP) 
+) +
+  ggplot2::geom_line(size = 1) + 
+  ggplot2::geom_point(size = 3) +
+  ggplot2::scale_x_date(date_labels = "%Y", date_breaks = "1 year") +
+  ggplot2::scale_y_continuous(
+    name = "Tasa de mortalidad específica por suicidios"
+  ) +
+  ggplot2::labs(
+    title = NULL, 
+    x = "Año",
+    color = "Rango Etario"
+  ) +
+
+  ggplot2::scale_color_manual(
+    values = c("0-14" = "#E69F00", "15-64" = "#ff6b6b", "65 o más" = "#387EF8") 
+  ) +
+  ggplot2::theme_minimal()
+
+
+plotly_p_etario_fem <- plotly::ggplotly(
+  p_etario_fem, 
+  tooltip = "text"
+) |>
+  plotly::layout(hovermode = "x unified")
+
+htmlwidgets::saveWidget(
+  widget = plotly_p_etario_fem,
+  file = "graficos/grafico_tasa_suicidio_femenino_etario_interactivo.html",
+  selfcontained = TRUE
+)
+ggplot2::ggsave(
+  filename = "graficos/grafico_tasa_suicidio_femenino_etario.png", 
+  plot = p_etario_fem, 
+  width = 10, height = 6
+)
+
+
+
+
+datos_comparativo_masc <- df_tasa_masc_anual_etaria %>% 
+  dplyr::mutate(AÑO = as.Date(paste0(AÑO, "-01-01"))) %>% 
+  dplyr::mutate(TEXTO_TOOLTIP = paste0(
+    "Año: ", format(AÑO, "%Y"), "<br>",             
+    "Grupo: ", RANGO_ETARIO, "<br>",               
+    "Tasa: ", round(TASA, 2)                        
+  ))
+
+
+p_etario_masc <- ggplot2::ggplot(
+  data = datos_comparativo_masc, 
+  mapping = ggplot2::aes(x = AÑO, y = TASA, color = RANGO_ETARIO, group = RANGO_ETARIO,
+                         text = TEXTO_TOOLTIP)
+) +
+  ggplot2::geom_line(size = 1) + 
+  ggplot2::geom_point(size = 3) +
+  ggplot2::scale_x_date(date_labels = "%Y", date_breaks = "1 year") +
+  ggplot2::scale_y_continuous(
+    name = "Tasa de mortalidad específica por suicidios"
+  ) +
+  ggplot2::labs(
+    title = NULL, 
+    x = "Año",
+    color = "Rango Etario"
+  ) +
+
+  ggplot2::scale_color_manual(
+    values = c("0-14" = "#E69F00", "15-64" = "#ff6b6b", "65 o más" = "#387EF8") 
+  ) +
+  ggplot2::theme_minimal()
+
+
+plotly_p_etario_masc <- plotly::ggplotly(
+  p_etario_masc, 
+  tooltip = "text"
+) |>
+  plotly::layout(hovermode = "x unified")
+
+htmlwidgets::saveWidget(
+  widget = plotly_p_etario_masc,
+  file = "graficos/grafico_tasa_suicidio_masculino_etario_interactivo.html",
+  selfcontained = TRUE
+)
+ggplot2::ggsave(
+  filename = "graficos/grafico_tasa_suicidio_masculino_etario.png", 
+  plot = p_etario_masc, 
+  width = 10, height = 6
+)
+
+
+############################### TABLAS #######################################33
+
+
+crear_tabla_simple_conteo <- function(data_frame, titulo, nombre_archivo, subtitulo = "En el periodo 2012-2022") {
+  
+  df_gt <- data_frame %>%
+    dplyr::select(AÑO, N_SUICIDIOS)
+  
+  tabla_gt <- df_gt %>%
+    gt() %>%
+    gt::tab_header(
+      title = gt::md(paste0("**", titulo, "**")),
+      subtitle = subtitulo
+    ) %>%
+    gt::fmt_number(
+      columns = c(N_SUICIDIOS),
+      decimals = 0, 
+      dec_mark = ",",
+      sep_mark = "."
+    ) %>%
+    gt::cols_label(
+      AÑO = gt::md("**Año**"),
+      N_SUICIDIOS = gt::md("**Cantidad de suicidios**")
+    ) %>%
+    gt::opt_row_striping() %>%
+    gt::tab_style(
+      style = gt::cell_fill(color = "#f3f3f3"),
+      locations = gt::cells_column_labels()
+    )
+  
+  gt::gtsave(
+    data = tabla_gt,
+    filename = paste0("tablas/", nombre_archivo, ".png")
+  )
+}
+
+crear_tabla_simple_tasa <- function(data_frame, titulo, nombre_archivo, subtitulo = "En el periodo 2012-2022") {
+  
+  df_gt <- data_frame %>%
+    dplyr::select(AÑO, TASA)
+  
+  tabla_gt <- df_gt %>%
+    gt() %>%
+    gt::tab_header(
+      title = gt::md(paste0("**", titulo, "**")),
+      subtitle = subtitulo
+    ) %>%
+    gt::fmt_number(
+      columns = c(TASA),
+      decimals = 2, 
+      dec_mark = ",",
+      sep_mark = "."
+    ) %>%
+    gt::cols_label(
+      AÑO = gt::md("**Año**"),
+      TASA = gt::md("**Tasa**")
+    ) %>%
+    gt::opt_row_striping() %>%
+    gt::tab_style(
+      style = gt::cell_fill(color = "#f3f3f3"),
+      locations = gt::cells_column_labels()
+    )
+  
+  gt::gtsave(
+    data = tabla_gt,
+    filename = paste0("tablas/", nombre_archivo, ".png")
+  )
+}
+
+crear_tabla_etaria_conteo <- function(data_frame, titulo, nombre_archivo, subtitulo = "Por rango etario en el periodo 2012-2022") {
+  
+  df_pivot <- data_frame %>%
+    dplyr::select(AÑO, RANGO_ETARIO, N_SUICIDIOS) %>%
+    tidyr::pivot_wider(
+      names_from = RANGO_ETARIO,
+      values_from = N_SUICIDIOS
+    )
+  
+  tabla_gt <- df_pivot %>%
+    gt() %>%
+    gt::tab_header(
+      title = gt::md(paste0("**", titulo, "**")),
+      subtitle = subtitulo
+    ) %>%
+    gt::fmt_integer(columns = AÑO, use_seps = FALSE) %>%
+    gt::fmt_number(
+      columns = -AÑO, 
+      decimals = 0,
+      dec_mark = ",",
+      sep_mark = "."
+    ) %>%
+    gt::cols_label(AÑO = gt::md("**Año**")) %>%
+    gt::opt_row_striping() %>%
+    gt::tab_style(
+      style = gt::cell_fill(color = "#f3f3f3"),
+      locations = gt::cells_column_labels()
+    )
+  
+  gt::gtsave(
+    data = tabla_gt,
+    filename = paste0("tablas/", nombre_archivo, ".png")
+  )
+}
+
+
+crear_tabla_etaria_tasa <- function(data_frame, titulo, nombre_archivo, subtitulo = "Por rango etario en el periodo 2012-2022") {
+  
+  df_pivot <- data_frame %>%
+    dplyr::select(AÑO, RANGO_ETARIO, TASA) %>%
+    tidyr::pivot_wider(
+      names_from = RANGO_ETARIO,
+      values_from = TASA
+    )
+  
+  tabla_gt <- df_pivot %>%
+    gt() %>%
+    gt::tab_header(
+      title = gt::md(paste0("**", titulo, "**")),
+      subtitle = subtitulo
+    ) %>%
+    gt::fmt_integer(columns = AÑO, use_seps = FALSE) %>%
+    gt::fmt_number(
+      columns = -AÑO, 
+      decimals = 2,
+      dec_mark = ",",
+      sep_mark = "."
+    ) %>%
+    gt::cols_label(AÑO = gt::md("**Año**")) %>%
+    gt::opt_row_striping() %>%
+    gt::tab_style(
+      style = gt::cell_fill(color = "#f3f3f3"),
+      locations = gt::cells_column_labels()
+    )
+  
+  gt::gtsave(
+    data = tabla_gt,
+    filename = paste0("tablas/", nombre_archivo, ".png")
+  )
+}
+
+
+
+crear_tabla_simple_conteo(
+  df_conteo_mixto, 
+  "Cantidad de suicidios generales", 
+  "tabla_conteo_mixta_anual"
+  )
+
+crear_tabla_simple_conteo(
+  df_conteo_fem, 
+  "Cantidad de suicidios en mujeres", 
+  "tabla_conteo_femenina_anual"
+  )
+
+crear_tabla_simple_conteo(
+  df_conteo_masc, 
+  "Cantidad de suicidios en hombres", 
+  "tabla_conteo_masculina_anual"
+  )
+
+
+
+crear_tabla_simple_tasa(
+  df_conteo_mixto_i, 
+  "Tasa de mortalidad específica por suicidio general", 
+  "tabla_tasa_mixta_anual"
+  )
+
+crear_tabla_simple_tasa(
+  df_fem_i, 
+  "Tasa de mortalidad específica por suicidio en mujeres", 
+  "tabla_tasa_femenina_anual"
+  )
+
+crear_tabla_simple_tasa(
+  df_masc_i, 
+  "Tasa de mortalidad específica por suicidio en hombres", 
+  "tabla_tasa_masculina_anual"
+  )
+
+
+crear_tabla_etaria_conteo(
+  data_frame = df_conteo_mixto_anual_etario,
+  titulo = "Cantidad de suicidios generales",
+  nombre_archivo = "tabla_conteo_mixta_etaria"
+)
+
+crear_tabla_etaria_conteo(
+  data_frame = df_conteo_fem_anual_etario,
+  titulo = "Cantidad de suicidios en mujeres",
+  nombre_archivo = "tabla_conteo_femenina_etaria"
+)
+
+crear_tabla_etaria_conteo(
+  data_frame = df_conteo_masc_anual_etario,
+  titulo = "Cantidad de suicidios en hombres",
+  nombre_archivo = "tabla_conteo_masculina_etaria"
+)
+
+
+crear_tabla_etaria_tasa(
+  data_frame = df_tasa_mixta_anual_etaria,
+  titulo = "Tasa de mortalidad específica por suicidio general",
+  nombre_archivo = "tabla_tasa_mixta_etaria"
+)
+
+crear_tabla_etaria_tasa(
+  data_frame = df_tasa_fem_anual_etaria,
+  titulo = "Tasa de mortalidad específica por suicidio en mujeres",
+  nombre_archivo = "tabla_tasa_femenina_etaria"
+)
+
+crear_tabla_etaria_tasa(
+  data_frame = df_tasa_masc_anual_etaria,
+  titulo = "Tasa de mortalidad específica por suicidio en hombres",
+  nombre_archivo = "tabla_tasa_masculina_etaria"
+)
+
+
+
+
