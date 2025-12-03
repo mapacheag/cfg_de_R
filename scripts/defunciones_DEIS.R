@@ -204,7 +204,7 @@ df_conteo_mixto_anual_etario <- df_final %>%
 print("Cantidad de suicidios generales por rango etario (2012-2022)")
 print(df_conteo_mixto_anual_etario)
 
-df_conteo_fem_anual_etario <- df_final %>%
+df_conteo_fem_anual_etario <- df_fem %>%
   categorizar_edad_suicidios() %>%
   dplyr::mutate(AÑO = as.numeric(AÑO)) %>%
   dplyr::filter(AÑO >= 2012 & AÑO <= 2022) %>%
@@ -214,7 +214,7 @@ df_conteo_fem_anual_etario <- df_final %>%
 print("Cantidad de suicidios en mujeres por rango etario (2012-2022)")
 print(df_conteo_fem_anual_etario)
 
-df_conteo_masc_anual_etario <- df_final %>%
+df_conteo_masc_anual_etario <- df_masc %>%
   categorizar_edad_suicidios() %>%
   dplyr::mutate(AÑO = as.numeric(AÑO)) %>%
   dplyr::filter(AÑO >= 2012 & AÑO <= 2022) %>%
@@ -567,6 +567,11 @@ htmlwidgets::saveWidget(
   selfcontained = TRUE
 )
 
+ggplot2::ggsave(
+  filename = "graficos/prefinalgrafico_tasa_suicidio_general.png", 
+  plot = p3, 
+  width = 10, height = 6
+)
 
 ######################## FIN DE PLANTILLA SERIE DE TIEMPO #########################
 ###################################################################################
@@ -651,6 +656,12 @@ htmlwidgets::saveWidget(
   selfcontained = TRUE
 )
 
+ggplot2::ggsave(
+  filename = "graficos/prefinalgrafico_tasa_suicidio_femenino.png", 
+  plot = p4, 
+  width = 10, height = 6
+)
+
 ######################## FIN GRAFICO SOLO FEMENINO_I ##############################
 ###################################################################################
 
@@ -731,6 +742,12 @@ htmlwidgets::saveWidget(
   file = "graficos/grafico_tasa_suicidio_masculino_interactivo.html",
   selfcontained = TRUE
 )
+ggplot2::ggsave(
+  filename = "graficos/prefinalgrafico_tasa_suicidio_masculino.png", 
+  plot = p5, 
+  width = 10, height = 6
+)
+
 
 ######################## FIN GRAFICO SOLO MASCULINO _I ############################
 ###################################################################################
