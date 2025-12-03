@@ -8,16 +8,16 @@ library(ggplot2)
 
 
 ##### LINUX  #########
-#df_main <- readr::read_csv2(
- # "bases_de_datos/DEFUNCIONES_FUENTE_DEIS_1990_2022_CIFRAS_OFICIALES.csv",
-  #locale = readr::locale(encoding = "ISO-8859-1")
-#)
-
-##### WINDOWS  #########
 df_main <- readr::read_csv2(
-  "../bases_de_datos/DEFUNCIONES_FUENTE_DEIS_1990_2022_CIFRAS_OFICIALES.csv",
+  "bases_de_datos/DEFUNCIONES_FUENTE_DEIS_1990_2022_CIFRAS_OFICIALES.csv",
   locale = readr::locale(encoding = "ISO-8859-1")
 )
+
+##### WINDOWS  #########
+#df_main <- readr::read_csv2(
+ # "../bases_de_datos/DEFUNCIONES_FUENTE_DEIS_1990_2022_CIFRAS_OFICIALES.csv",
+  #locale = readr::locale(encoding = "ISO-8859-1")
+#)
 
 
 #head(df_main)
@@ -142,50 +142,132 @@ print(df_conteo_mixto)
 #####################################################################
 
 
-categorizar_edad_suicidios <- function(df, clumna_edad = "EDAD_CANT") {
-  
-  limites_rangos <- c(0,14,64,Inf)
-  etiquetas_rangos <- c("0-14", "15-64", ">65")
-  
-  df %>%
-    dplyr::mutate(
-      RANGO_ETARIO = cut(
-        x = EDAD_CANT,
-        breaks = limites_rangos,
-        labels = etiquetas_rangos,
-        right = TRUE,
-        include.lowest = TRUE
-      )
-    ) %>%
-    dplyr::filter(!is.na(RANGO_ETARIO))
-}
+df_poblacion_anual_etaria <- tibble::tribble(
+  ~AÑO, ~RANGO_ETARIO, ~POBLACION_REF,
+  #2012
+  2012, "0-14", 3732105,
+  2012, "15-64", 11998670,
+  2012, ">65", 1712716,
+  #2013
+  2013, "0-14", 3712426,
+  2013, "15-64", 12125123,
+  2013, ">65", 1774353,
+  #2014
+  2014, "0-14", 3698929,
+  2014, "15-64", 12251374,
+  2014, ">65", 1837314,
+  #2015
+  2015, "0-14", 3695756,
+  2015, "15-64", 12369304,
+  2015, ">65", 1906363,
+  #2016
+  2016, "0-14", 3692751,
+  2016, "15-64", 12488678,
+  2016, ">65", 1985718,
+  #2017
+  2017, "0-14", 3689702,
+  2017, "15-64", 12658694,
+  2017, ">65", 2070796,
+  #2018
+  2018, "0-14", 3696140,
+  2018, "15-64", 12890070,
+  2018, ">65", 2165195,
+  #2019
+  2019, "0-14", 3714172,
+  2019, "15-64", 13132822,
+  2019, ">65", 2260222,
+  #2020
+  2020, "0-14", 3738038,
+  2020, "15-64", 13361656,
+  2020, ">65", 2358616,
+  #2021
+  2021, "0-14", 3745665,
+  2021, "15-64", 13473999,
+  2021, ">65", 2458699,
+  #2022
+  2022, "0-14", 3739366,
+  2022, "15-64", 13528576,
+  2022, ">65", 2560621,
+)%>%
+  dplyr::mutate(
+    RANGO_ETARIO = factor(RANGO_ETARIO, levels= c("0-14", "15-64", ">65"))
+  )
 
-df_etario_conteo_mixto <- df_final %>%
+df_conteo_mixto_anual_etario <- df_final %>%
   categorizar_edad_suicidios() %>%
-  dplyr::group_by(RANGO_ETARIO) %>%
-  dplyr::summarise(N_SUICIDIOS = n()) %>%
-  dplyr::ungroup()
+  dplyr::mutate(AÑO = as.numeric(AÑO)) %>%
+  dplyr::filter(AÑO >= 2012 & AÑO <= 2022) %>%
+  dplyr::group_by(AÑO, RANGO_ETARIO) %>%
+  dplyr::summarise(N_SUICIDIOS = n(), .groups = 'drop')
 
 print("Cantidad de suicidios generales por rango etario (2012-2022)")
-print(df_etario_conteo_mixto)
+print(df_conteo_mixto_anual_etario)
 
-df_etario_conteo_fem <- df_fem %>%
+df_conteo_fem_anual_etario <- df_final %>%
   categorizar_edad_suicidios() %>%
-  dplyr::group_by(RANGO_ETARIO) %>%
-  dplyr::summarise(N_SUICIDIOS = n()) %>%
-  dplyr::ungroup()
+  dplyr::mutate(AÑO = as.numeric(AÑO)) %>%
+  dplyr::filter(AÑO >= 2012 & AÑO <= 2022) %>%
+  dplyr::group_by(AÑO, RANGO_ETARIO) %>%
+  dplyr::summarise(N_SUICIDIOS = n(), .groups = 'drop')
 
-print("Cantidad de sucidios en mujeres por rango etario (2012-2022)")
-print(df_etario_conteo_fem)
+print("Cantidad de suicidios en mujeres por rango etario (2012-2022)")
+print(df_conteo_fem_anual_etario)
 
-df_etario_conteo_masc <- df_masc %>%
+df_conteo_masc_anual_etario <- df_final %>%
   categorizar_edad_suicidios() %>%
-  dplyr::group_by(RANGO_ETARIO) %>%
-  dplyr::summarise(N_SUICIDIOS = n()) %>%
-  dplyr::ungroup()
+  dplyr::mutate(AÑO = as.numeric(AÑO)) %>%
+  dplyr::filter(AÑO >= 2012 & AÑO <= 2022) %>%
+  dplyr:: group_by(AÑO, RANGO_ETARIO) %>%
+  dplyr::summarise(N_SUICIDIOS = n(), .groups = 'drop')
 
 print("Cantidad de suicidios en hombres por rango etario (2012-2022)")
-print(df_etario_conteo_masc)
+print(df_conteo_masc_anual_etario)
+
+
+#categorizar_edad_suicidios <- function(df, clumna_edad = "EDAD_CANT") {
+  
+ # limites_rangos <- c(0,14,64,Inf)
+  #etiquetas_rangos <- c("0-14", "15-64", ">65")
+  
+  #df %>%
+   # dplyr::mutate(
+    #  RANGO_ETARIO = cut(
+     #   x = EDAD_CANT,
+      #  breaks = limites_rangos,
+       # labels = etiquetas_rangos,
+        #right = TRUE,
+        #include.lowest = TRUE
+      #)
+    #) %>%
+    #dplyr::filter(!is.na(RANGO_ETARIO))
+#}
+
+#df_etario_conteo_mixto <- df_final %>%
+ # categorizar_edad_suicidios() %>%
+  #dplyr::group_by(RANGO_ETARIO) %>%
+  #dplyr::summarise(N_SUICIDIOS = n()) %>%
+  #dplyr::ungroup()
+
+#print("Cantidad de suicidios generales por rango etario (2012-2022)")
+#print(df_etario_conteo_mixto)
+
+#df_etario_conteo_fem <- df_fem %>%
+ # categorizar_edad_suicidios() %>%
+  #dplyr::group_by(RANGO_ETARIO) %>%
+  #dplyr::summarise(N_SUICIDIOS = n()) %>%
+  #dplyr::ungroup()
+
+#print("Cantidad de sucidios en mujeres por rango etario (2012-2022)")
+#print(df_etario_conteo_fem)
+
+#df_etario_conteo_masc <- df_masc %>%
+ # categorizar_edad_suicidios() %>%
+  #dplyr::group_by(RANGO_ETARIO) %>%
+  #dplyr::summarise(N_SUICIDIOS = n()) %>%
+  #dplyr::ungroup()
+
+#print("Cantidad de suicidios en hombres por rango etario (2012-2022)")
+#print(df_etario_conteo_masc)
 
 
 ############# CALCULO DE LA TASA DE SUICIDIOS CADA 100.000 HABITANTES; UTILIZANDO PROYECCIONES ANUALES
@@ -235,9 +317,29 @@ print(df_masc_i)
 print(df_conteo_mixto_i)
 
 #################################################################
-######## EN LA NOCHE AGREGO LA TASA PARA RANGOS ETARIOS #########
+######## TASA PARA RANGOS ETARIOS #########
 #################################################################
 
+calcular_tasa_anual_etaria <- function(df_conteo_anual_etario, df_pob_anual_etaria){
+  
+  df_conteo_anual_etario %>%
+    dplyr::left_join(df_pob_anual_etaria, by = c("AÑO", "RANGO_ETARIO")) %>%
+    dplyr::mutate(
+      TASA = round(
+        (N_SUICIDIOS / POBLACION_REF) * 100000,
+        digits = 3
+      )
+    ) %>%
+    dplyr::select(AÑO, RANGO_ETARIO, TASA)
+}
+
+df_tasa_mixta_anual_etaria <- calcular_tasa_anual_etaria(df_conteo_mixto_anual_etario, df_poblacion_anual_etaria)
+df_tasa_fem_anual_etaria <- calcular_tasa_anual_etaria(df_conteo_fem_anual_etario, df_poblacion_anual_etaria)
+df_tasa_masc_anual_etaria <- calcular_tasa_anual_etaria(df_conteo_masc_anual_etario, df_poblacion_anual_etaria)
+
+print(df_tasa_mixta_anual_etaria)
+print(df_tasa_fem_anual_etaria)
+print(df_tasa_masc_anual_etaria)
 
 
 #df_conteo_fem_i <- df_conteo_fem %>%
@@ -458,6 +560,13 @@ plotly_p3 <- plotly::ggplotly(p3) |>                                    # Convie
 # Mostrar gráfico interactivo
 print(plotly_p3)                                                        # Imprime gráfico plotly interactivo
 
+htmlwidgets::saveWidget(
+  widget = plotly_p3,
+  file = "graficos/grafico_tasa_suicidio_comparativo_interactivo.html",
+  selfcontained = TRUE
+)
+
+
 ######################## FIN DE PLANTILLA SERIE DE TIEMPO #########################
 ###################################################################################
 
@@ -535,6 +644,12 @@ plotly_p4 <- plotly::ggplotly(p4) |>                                    # Convie
 # Mostrar gráfico interactivo
 print(plotly_p4)                                                        # Imprime gráfico plotly interactivo
 
+htmlwidgets::saveWidget(
+  widget = plotly_p4,
+  file = "graficos/grafico_tasa_suicidio_femenino_interactivo.html",
+  selfcontained = TRUE
+)
+
 ######################## FIN GRAFICO SOLO FEMENINO_I ##############################
 ###################################################################################
 
@@ -609,5 +724,12 @@ plotly_p5 <- plotly::ggplotly(p5) |>                                    # Convie
 
 # Mostrar gráfico interactivo
 print(plotly_p5)                                                        # Imprime gráfico plotly interactivo
+
+htmlwidgets::saveWidget(
+  widget = plotly_p5,
+  file = "graficos/grafico_tasa_suicidio_masculino_interactivo.html",
+  selfcontained = TRUE
+)
+
 ######################## FIN GRAFICO SOLO MASCULINO _I ############################
 ###################################################################################
