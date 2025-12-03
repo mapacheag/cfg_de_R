@@ -8,16 +8,16 @@ library(ggplot2)
 
 
 ##### LINUX  #########
-df_main <- readr::read_csv2(
-  "bases_de_datos/DEFUNCIONES_FUENTE_DEIS_1990_2022_CIFRAS_OFICIALES.csv",
-  locale = readr::locale(encoding = "ISO-8859-1")
-)
-
-##### WINDOWS  #########
 #df_main <- readr::read_csv2(
- # "../bases_de_datos/DEFUNCIONES_FUENTE_DEIS_1990_2022_CIFRAS_OFICIALES.csv",
+ # "bases_de_datos/DEFUNCIONES_FUENTE_DEIS_1990_2022_CIFRAS_OFICIALES.csv",
   #locale = readr::locale(encoding = "ISO-8859-1")
 #)
+
+##### WINDOWS  #########
+df_main <- readr::read_csv2(
+  "../bases_de_datos/DEFUNCIONES_FUENTE_DEIS_1990_2022_CIFRAS_OFICIALES.csv",
+  locale = readr::locale(encoding = "ISO-8859-1")
+)
 
 
 #head(df_main)
@@ -372,44 +372,93 @@ print(df_conteo_mixto_i)
 ###################### INICIO DE PLANTILLA SERIE DE TIEMPO ########################
 
 #si no existe el paquete plotly, lo instalamos
-if(!require(plotly)){install.packages("plotly")}
+if(!require(plotly)){install.packages("plotly")}                 # Verifica e instala plotly si es necesario
 
-# Datos tipo "tibble" (generados de forma reproducible)
-set.seed(123)
-fechas <- seq(as.Date("2012-01-01"), as.Date("2022-01-01"), by = "1 year")
-n <- length(fechas)
+#Formatea el rango de fechas desde el 2012 hasta el 2022, en rangos de 1 año
+fechas_comparativo <- seq(as.Date("2012-01-01"), as.Date("2022-01-01"), by = "1 year")  # Crea secuencia de fechas anuales
+n_comparativo <- length(fechas_comparativo)                     # Cuenta número de años (11)
 
-# Series que imitan patrones y rangos de IVE en el período (verde ~40–70; azul ~2–16)
-set.seed(2125)
-#datos aleatorios. de ahi, reemplazar por sus datos
-serie_verde <- rnorm(n= n, 
-                     mean=.28, 
-                     sd=.05)
+#Series de datos
+serie_verde_comparativo <- df_fem_i$TASA                         # Extrae tasas de suicidio femeninas
+serie_azul_comparativo  <- df_masc_i$TASA                        # Extrae tasas de suicidio masculinas
 
-datos <- tibble::tibble(
-  mes = fechas,
-  verde = serie_verde#,
-  #azul  = serie_azul #sacamos la otra serie
+#Une los datos a graficar
+datos_comparativo <- tibble::tibble(                             # Crea tibble con datos
+  año = fechas_comparativo,                                      # Columna de fechas
+  verde = serie_verde_comparativo,                               # Columna de datos femeninos
+  azul  = serie_azul_comparativo                                 # Columna de datos masculinos
 ) |>
-  dplyr::mutate(mes_anio = format(mes, "%b %Y")) |>
-  dplyr::select(mes, mes_anio, verde) #, azul) #sacamos la otra serie
+  dplyr::mutate(                                                 # Transforma datos
+    año_anio = format(año, "%b %Y"),                            # Formatea fecha como "Mes Año"
+    # Crear columnas de tooltip
+    text_mujeres = paste0("Año: ", format(año, "%Y"), "<br>",   # Tooltip para mujeres con etiquetas personalizadas
+                          "Grupo: Mujeres<br>",
+                          "Tasa: ", round(verde, 2)),
+    text_hombres = paste0("Año: ", format(año, "%Y"), "<br>",   # Tooltip para hombres con etiquetas personalizadas
+                          "Grupo: Hombres<br>",
+                          "Tasa: ", round(azul, 2))
+  ) |>
+  dplyr::select(año, año_anio, verde, azul, text_mujeres, text_hombres)  # Selecciona columnas relevantes
 
-p3<- 
-  ggplot2::ggplot(datos, ggplot2::aes(x = mes)) + #formato wide. cada variable es una columna, en este caso
-  geom_line(ggplot2::aes(y = verde, color = "Mujeres"), size = 1) + #añadimos una capa de línea con las interrupciones
-  #geom_line(ggplot2::aes(y = azul, color = "Continuaciones"), size = 1) + #añadimos una capa de línea con las continuaciones
-  scale_color_manual(#generamos la leyenda
-    name = "Leyenda",#título de la leyenda
-    values = c("Mujeres" = "#01c9ad", "Continuaciones" = "#9682fc"))+#colores de las líneas e identificador de las líneas
-  labs(y = "Suicidios por cada 100.000 habitantes", x = "Año")+ #Definimos las etiquetas de ejes
-  theme_minimal(base_family = "storia-sans") #+ #tema minimalista, con la fuente personalizada
+# Gráfico ggplot básico 
+p3 <- ggplot2::ggplot(datos_comparativo, ggplot2::aes(x = año)) +        # Inicia gráfico ggplot con eje X de fechas
+  
+  geom_line(
+    ggplot2::aes(y = verde, color = "Mujeres"),                         # Línea para datos femeninos
+    size = 1                                                            # Grosor de línea
+  ) +
+  
+  geom_line(
+    ggplot2::aes(y = azul, color = "Hombres"),                          # Línea para datos masculinos
+    size = 1                                                            # Grosor de línea
+  ) +
+  
+  scale_color_manual(                                                    # Define colores de las líneas
+    name = "Leyenda",                                                   # Título de la leyenda
+    values = c("Mujeres" = "#01c9ad", "Hombres" = "#9682fc")            # Códigos hexadecimales para colores
+  ) +
+  
+  scale_x_date(date_labels = "%Y", date_breaks = "1 year") +            # Formato eje X: solo año, marcas anuales
+  
+  labs(y = "Suicidios por cada 100.000 habitantes", x = "Año") +        # Etiquetas de ejes
+  
+  theme_minimal()                                                       # Tema minimalista para gráfico
 
-p3 #grafico estático
+# Mostrar gráfico estático
+print(p3)                                                               # Imprime gráfico ggplot estático
 
-plotly::ggplotly(p3) |> #convertimos a plotly. ojo que el tooltip se genera por defecto, pero se puede personalizar
-  layout(font=list(family="storia-sans"), # fuente personalizada
-         paper_bgcolor = "rgba(0,0,0,0)",  plot_bgcolor  = "rgba(0,0,0,0)") # → fondo del lienzo y fondo del área de trazado
+# Convertir a plotly - Asegurar que plotly_p3 use datos_comparativo
+plotly_p3 <- plotly::ggplotly(p3) |>                                    # Convierte ggplot a plotly interactivo
+  plotly::style(                                                        # Personaliza primera traza (mujeres)
+    # Tooltip para línea de mujeres (trace 1)
+    text = datos_comparativo$text_mujeres,                             # Texto personalizado para tooltip
+    hoverinfo = "text",                                                 # Solo muestra texto personalizado
+    traces = 1                                                          # Aplica a primera línea (mujeres)
+  ) |>
+  plotly::style(                                                        # Personaliza segunda traza (hombres)
+    # Tooltip para línea de hombres (trace 2)  
+    text = datos_comparativo$text_hombres,                             # Texto personalizado para tooltip
+    hoverinfo = "text",                                                 # Solo muestra texto personalizado
+    traces = 2                                                          # Aplica a segunda línea (hombres)
+  ) |>
+  plotly::layout(                                                       # Personaliza layout del gráfico
+    font = list(family = "Arial, sans-serif"),                         # Fuente de todo el texto
+    paper_bgcolor = "rgba(0,0,0,0)",                                   # Fondo transparente del área exterior
+    plot_bgcolor = "rgba(0,0,0,0)",                                    # Fondo transparente del área del gráfico
+    hoverlabel = list(                                                  # Personaliza etiquetas al pasar cursor
+      bgcolor = "white",                                               # Color de fondo del tooltip
+      font = list(size = 12),                                          # Tamaño de fuente del tooltip
+      bordercolor = "black"                                        # Color del borde del tooltip
+      # PARA CAMBIAR COLOR DEL TEXTO DEL TOOLTIP: añadir color = "color_deseado"
+      # Ejemplo: font = list(size = 12, color = "black")
+    ),
+    hovermode = "x"                                                     # Muestra tooltips alineados verticalmente en misma X
+  )
 
+# Mostrar gráfico interactivo
+print(plotly_p3)                                                        # Imprime gráfico plotly interactivo
 
 ######################## FIN DE PLANTILLA SERIE DE TIEMPO #########################
 ###################################################################################
+
+warnings()
