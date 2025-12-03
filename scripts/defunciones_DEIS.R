@@ -430,13 +430,13 @@ print(p3)                                                               # Imprim
 # Convertir a plotly - Asegurar que plotly_p3 use datos_comparativo
 plotly_p3 <- plotly::ggplotly(p3) |>                                    # Convierte ggplot a plotly interactivo
   plotly::style(                                                        # Personaliza primera traza (mujeres)
-    # Tooltip para línea de mujeres (trace 1)
+    # Tooltip para línea de mujeres 
     text = datos_comparativo$text_mujeres,                             # Texto personalizado para tooltip
     hoverinfo = "text",                                                 # Solo muestra texto personalizado
     traces = 1                                                          # Aplica a primera línea (mujeres)
   ) |>
   plotly::style(                                                        # Personaliza segunda traza (hombres)
-    # Tooltip para línea de hombres (trace 2)  
+    # Tooltip para línea de hombres  
     text = datos_comparativo$text_hombres,                             # Texto personalizado para tooltip
     hoverinfo = "text",                                                 # Solo muestra texto personalizado
     traces = 2                                                          # Aplica a segunda línea (hombres)
@@ -461,4 +461,153 @@ print(plotly_p3)                                                        # Imprim
 ######################## FIN DE PLANTILLA SERIE DE TIEMPO #########################
 ###################################################################################
 
-warnings()
+
+
+######################## INICIO GRAFICO SOLO FEMENINO_I ###########################
+###################################################################################
+
+#si no existe el paquete plotly, lo instalamos
+if(!require(plotly)){install.packages("plotly")}                 # Verifica e instala plotly si es necesario
+
+#Formatea el rango de fechas desde el 2012 hasta el 2022, en rangos de 1 año
+fechas_fem_i <- seq(as.Date("2012-01-01"), as.Date("2022-01-01"), by = "1 year")  # Crea secuencia de fechas anuales
+n_fem_i <- length(fechas_fem_i)                     # Cuenta número de años (11)
+
+#Series de datos
+serie_verde_fem_i <- df_fem_i$TASA                         # Extrae tasas de suicidio femeninas
+
+#Une los datos a graficar
+datos_fem_i <- tibble::tibble(                             # Crea tibble con datos
+  año = fechas_fem_i,                                      # Columna de fechas
+  verde = serie_verde_fem_i                                # Columna de datos femeninos
+) |>
+  dplyr::mutate(                                                 # Transforma datos
+    año_anio = format(año, "%b %Y"),                            # Formatea fecha como "Mes Año"
+    # Crear columnas de tooltip
+    text_mujeres = paste0("Año: ", format(año, "%Y"), "<br>",   # Tooltip para mujeres con etiquetas personalizadas
+                          "Grupo: Mujeres<br>",
+                          "Tasa: ", round(verde, 2))
+  ) |>
+  dplyr::select(año, año_anio, verde, text_mujeres)  # Selecciona columnas relevantes
+
+# Gráfico ggplot básico 
+p4 <- ggplot2::ggplot(datos_fem_i, ggplot2::aes(x = año)) +        # Inicia gráfico ggplot con eje X de fechas
+  
+  geom_line(
+    ggplot2::aes(y = verde, color = "Mujeres"),                         # Línea para datos femeninos
+    size = 1                                                            # Grosor de línea
+  ) +
+  
+  scale_color_manual(                                                    # Define colores de las líneas
+    name = "Leyenda",                                                   # Título de la leyenda
+    values = c("Mujeres" = "#01c9ad")            # Códigos hexadecimales para colores
+  ) +
+  
+  scale_x_date(date_labels = "%Y", date_breaks = "1 year") +            # Formato eje X: solo año, marcas anuales
+  
+  labs(y = "Suicidios por cada 100.000 habitantes", x = "Año") +        # Etiquetas de ejes
+  
+  theme_minimal()                                                       # Tema minimalista para gráfico
+
+# Mostrar gráfico estático
+print(p4)                                                               # Imprime gráfico ggplot estático
+
+# Convertir a plotly - Asegurar que plotly_p4 use datos_fem_i
+plotly_p4 <- plotly::ggplotly(p4) |>                                    # Convierte ggplot a plotly interactivo
+  plotly::style(                                                        # Personaliza traza (mujeres)
+    # Tooltip para línea de mujeres 
+    text = datos_fem_i$text_mujeres,                             # Texto personalizado para tooltip
+    hoverinfo = "text",                                                 # Solo muestra texto personalizado
+    traces = 1                                                          # Aplica a línea (mujeres)
+  ) |>
+  plotly::layout(                                                       # Personaliza layout del gráfico
+    font = list(family = "Arial, sans-serif"),                         # Fuente de todo el texto
+    paper_bgcolor = "rgba(0,0,0,0)",                                   # Fondo transparente del área exterior
+    plot_bgcolor = "rgba(0,0,0,0)",                                    # Fondo transparente del área del gráfico
+    hoverlabel = list(                                                  # Personaliza etiquetas al pasar cursor
+      bgcolor = "white",                                               # Color de fondo del tooltip
+      font = list(size = 12),                                          # Tamaño de fuente del tooltip
+      bordercolor = "black"                                        # Color del borde del tooltip
+    ),
+    hovermode = "x"                                                     # Muestra tooltips alineados verticalmente en misma X
+  )
+
+# Mostrar gráfico interactivo
+print(plotly_p4)                                                        # Imprime gráfico plotly interactivo
+
+######################## FIN GRAFICO SOLO FEMENINO_I ##############################
+###################################################################################
+
+####################### INICIO GRAFICO SOLO MASCULINO _I ##########################
+###################################################################################
+
+#si no existe el paquete plotly, lo instalamos
+if(!require(plotly)){install.packages("plotly")}                 # Verifica e instala plotly si es necesario
+
+#Formatea el rango de fechas desde el 2012 hasta el 2022, en rangos de 1 año
+fechas_masc_i <- seq(as.Date("2012-01-01"), as.Date("2022-01-01"), by = "1 year")  # Crea secuencia de fechas anuales
+n_masc_i <- length(fechas_masc_i)                     # Cuenta número de años (11)
+
+#Series de datos
+serie_azul_masc_i <- df_masc_i$TASA                        # Extrae tasas de suicidio masculinas
+
+#Une los datos a graficar
+datos_masc_i <- tibble::tibble(                             # Crea tibble con datos
+  año = fechas_masc_i,                                      # Columna de fechas
+  azul = serie_azul_masc_i                                  # Columna de datos masculinos
+) |>
+  dplyr::mutate(                                                 # Transforma datos
+    año_anio = format(año, "%b %Y"),                            # Formatea fecha como "Mes Año"
+    # Crear columnas de tooltip
+    text_hombres = paste0("Año: ", format(año, "%Y"), "<br>",   # Tooltip para hombres con etiquetas personalizadas
+                          "Grupo: Hombres<br>",
+                          "Tasa: ", round(azul, 2))
+  ) |>
+  dplyr::select(año, año_anio, azul, text_hombres)  # Selecciona columnas relevantes
+
+# Gráfico ggplot básico 
+p5 <- ggplot2::ggplot(datos_masc_i, ggplot2::aes(x = año)) +        # Inicia gráfico ggplot con eje X de fechas
+  
+  geom_line(
+    ggplot2::aes(y = azul, color = "Hombres"),                          # Línea para datos masculinos
+    size = 1                                                            # Grosor de línea
+  ) +
+  
+  scale_color_manual(                                                    # Define colores de las líneas
+    name = "Leyenda",                                                   # Título de la leyenda
+    values = c("Hombres" = "#9682fc")            # Códigos hexadecimales para colores
+  ) +
+  
+  scale_x_date(date_labels = "%Y", date_breaks = "1 year") +            # Formato eje X: solo año, marcas anuales
+  
+  labs(y = "Suicidios por cada 100.000 habitantes", x = "Año") +        # Etiquetas de ejes
+  
+  theme_minimal()                                                       # Tema minimalista para gráfico
+
+# Mostrar gráfico estático
+print(p5)                                                               # Imprime gráfico ggplot estático
+
+# Convertir a plotly - Asegurar que plotly_p5 use datos_masc_i
+plotly_p5 <- plotly::ggplotly(p5) |>                                    # Convierte ggplot a plotly interactivo
+  plotly::style(                                                        # Personaliza traza (hombres)
+    # Tooltip para línea de hombres  
+    text = datos_masc_i$text_hombres,                             # Texto personalizado para tooltip
+    hoverinfo = "text",                                                 # Solo muestra texto personalizado
+    traces = 1                                                          # Aplica a línea (hombres)
+  ) |>
+  plotly::layout(                                                       # Personaliza layout del gráfico
+    font = list(family = "Arial, sans-serif"),                         # Fuente de todo el texto
+    paper_bgcolor = "rgba(0,0,0,0)",                                   # Fondo transparente del área exterior
+    plot_bgcolor = "rgba(0,0,0,0)",                                    # Fondo transparente del área del gráfico
+    hoverlabel = list(                                                  # Personaliza etiquetas al pasar cursor
+      bgcolor = "white",                                               # Color de fondo del tooltip
+      font = list(size = 12),                                        # Tamaño de fuente del tooltip
+      bordercolor = "black"                                        # Color del borde del tooltip
+    ),
+    hovermode = "x"                                                     # Muestra tooltips alineados verticalmente en misma X
+  )
+
+# Mostrar gráfico interactivo
+print(plotly_p5)                                                        # Imprime gráfico plotly interactivo
+######################## FIN GRAFICO SOLO MASCULINO _I ############################
+###################################################################################
